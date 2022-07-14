@@ -1,63 +1,68 @@
 package com.example.lesson12
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
-import com.example.lesson12.ListFragment.Companion.DEFAULT_NAME_FILE
-import com.example.lesson12.ListFragment.Companion.KEY_FOLDER_NAME
-import com.example.lesson12.ListFragment.Companion.KEY_TRANSFER_NAME
-import com.example.lesson12.ListFragment.Companion.SLASH_N
-import com.example.lesson12.ListFragment.Companion.TAG_FOR_LIST
-import com.example.lesson12.ListFragment.Companion.TXT_EMPTY
+import com.example.lesson12.databinding.FragmentDetailBinding
 import java.io.*
 import kotlin.math.max
 
-class DetailFragment : Fragment() {
+class DetailFragment : Fragment(), OnFragmentSendDataListener {
     private var editTextFile: EditText? = null
-    private var btnSave: Button? = null
 
     private var nameFile: String = ""
+
+    private var bindingDetail: FragmentDetailBinding? = null
+
+    private var fragmentSendDataListener: OnFragmentSendDataListener? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        fragmentSendDataListener = context as? OnFragmentSendDataListener
+            ?: error("$context${resources.getString(R.string.exceptionInterface)}")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        val view = inflater.inflate(R.layout.fragment_detail, container, false)
+    ): ConstraintLayout? {
+        bindingDetail = FragmentDetailBinding.inflate(layoutInflater)
 
-        findViewsById(view)
+        editTextFile = bindingDetail?.editTextFile
 
         openText()
 
-        return view
+        return bindingDetail?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        btnSave?.setOnClickListener {
+        bindingDetail?.btnSave?.setOnClickListener {
             saveText()
 
-            val fragment = ListFragment()
-            parentFragmentManager.beginTransaction()
-                .apply { add(R.id.nav_container, fragment, TAG_FOR_LIST) }
-                .commit()
+            fragmentSendDataListener?.onFinishDetailFragment()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        bindingDetail = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
         editTextFile = null
-        btnSave = null
     }
 
-    private fun findViewsById(view: View) {
-        editTextFile = view.findViewById(R.id.editTextFile)
-        btnSave = view.findViewById(R.id.btnSave)
+    override fun onDetach() {
+        super.onDetach()
+        fragmentSendDataListener = null
     }
 
     private fun checkingNameForUniqueness(currentFileName: String): String {
@@ -95,6 +100,9 @@ class DetailFragment : Fragment() {
     }
 
     private fun saveText() {
+        if(nameFile == ""){
+            nameFile = TXT_NULL
+        }
         val currentFile = File("${requireContext().filesDir}$KEY_FOLDER_NAME/$nameFile")
         var renameFile = currentFile
         val newNameFile: String
@@ -147,4 +155,8 @@ class DetailFragment : Fragment() {
             fnfe.printStackTrace()
         }
     }
+
+    override fun onSendData(data: String?) {}
+
+    override fun onFinishDetailFragment() {}
 }
